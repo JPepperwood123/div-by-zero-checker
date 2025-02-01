@@ -1,6 +1,6 @@
 package org.checkerframework.checker.dividebyzero;
 
-import com.sun.source.tree.*;
+// import com.sun.source.tree.*;
 import java.lang.annotation.Annotation;
 import java.util.EnumSet;
 import java.util.Set;
@@ -8,6 +8,12 @@ import javax.lang.model.type.TypeKind;
 import org.checkerframework.checker.dividebyzero.qual.*;
 import org.checkerframework.common.basetype.BaseTypeChecker;
 import org.checkerframework.common.basetype.BaseTypeVisitor;
+
+import com.sun.source.tree.BinaryTree;
+import com.sun.source.tree.CompoundAssignmentTree;
+import com.sun.source.tree.ExpressionTree;
+import com.sun.source.tree.Tree;
+
 
 public class DivByZeroVisitor extends BaseTypeVisitor<DivByZeroAnnotatedTypeFactory> {
 
@@ -29,6 +35,39 @@ public class DivByZeroVisitor extends BaseTypeVisitor<DivByZeroAnnotatedTypeFact
   private boolean errorAt(BinaryTree node) {
     // A BinaryTree can represent any binary operator, including + or -.
     // TODO
+
+    if (node == null) {
+      return false;
+    }
+
+    ExpressionTree leftOperand = node.getLeftOperand();
+    ExpressionTree rightOperand = node.getRightOperand();
+  
+    // Only DIVISION_OPERATORS have potential to throw a DB0 error
+    if (DIVISION_OPERATORS.contains(node.getKind())) {
+      // The denominator is literally evaluating to 0
+      if (isInt(rightOperand) && hasAnnotation(rightOperand, Zero.class)) {
+        return true;
+      }
+    }
+
+    // Recursively check both sides for an error
+    if (leftOperand instanceof BinaryTree) {
+      BinaryTree leftBT = (BinaryTree)leftOperand;
+
+      if (errorAt(leftBT)) {
+        return true;
+      }
+    }
+
+    if (rightOperand instanceof BinaryTree) {
+      BinaryTree rightBT = (BinaryTree)rightOperand;
+
+      if (errorAt(rightBT)) {
+        return true;
+      }
+    }
+
     return false;
   }
 
@@ -43,6 +82,39 @@ public class DivByZeroVisitor extends BaseTypeVisitor<DivByZeroAnnotatedTypeFact
     // A CompoundAssignmentTree represents any binary operator combined with an assignment,
     // such as "x += 10".
     // TODO
+    
+    if (node == null) {
+      return false;
+    }
+    
+    ExpressionTree leftOperand = node.getRightOperand();
+    ExpressionTree rightOperand = node.getRightOperand();
+
+    // Only DIVISION_OPERATORS have potential to throw a DB0 error
+    if (DIVISION_OPERATORS.contains(node.getKind())) {
+        // The denominator is of type @Zero
+        if (isInt(rightOperand) && hasAnnotation(rightOperand, Zero.class)) {
+          return true;
+        }
+    }
+
+    // Recursively check both sides for an error
+    if (leftOperand instanceof BinaryTree) {
+      BinaryTree leftBT = (BinaryTree)leftOperand;
+
+      if (errorAt(leftBT)) {
+        return true;
+      }
+    }
+
+    if (rightOperand instanceof BinaryTree) {
+      BinaryTree rightBT = (BinaryTree)rightOperand;
+
+      if (errorAt(rightBT)) {
+        return true;
+      }
+    }
+
     return false;
   }
 
