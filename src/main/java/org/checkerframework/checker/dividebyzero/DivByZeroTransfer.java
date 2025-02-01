@@ -76,7 +76,47 @@ public class DivByZeroTransfer extends CFTransfer {
    */
   private AnnotationMirror refineLhsOfComparison(
       Comparison operator, AnnotationMirror lhs, AnnotationMirror rhs) {
+
     // TODO
+    if (equal(lhs, bottom()) || equal(rhs, bottom())) {
+      return bottom();
+    }
+
+    AnnotationMirror zeroClass = reflect(Zero.class);
+    AnnotationMirror nonZeroClass = reflect(NonZero.class);
+
+    switch (operator) {
+      case EQ:
+        return glb(lhs, rhs);
+
+      case NE:
+        if (equal(lhs, zeroClass) && equal(rhs, zeroClass)) {
+          return bottom();
+        }
+
+        if (equal(lhs, zeroClass) || equal(rhs, zeroClass)) {
+          return nonZeroClass;
+        }
+
+        return lhs;
+
+      case LE:
+      case GE:
+        return lhs;
+
+      case LT:
+      case GT:
+        if (equal(lhs, zeroClass) && equal(rhs, zeroClass)) {
+          return bottom();
+        }
+
+        if (equal(rhs, zeroClass)) {
+          return nonZeroClass;
+        }
+
+        return lhs;
+    }
+
     return lhs;
   }
 
@@ -97,7 +137,59 @@ public class DivByZeroTransfer extends CFTransfer {
    */
   private AnnotationMirror arithmeticTransfer(
       BinaryOperator operator, AnnotationMirror lhs, AnnotationMirror rhs) {
+
     // TODO
+    if (equal(lhs, bottom()) || equal(rhs, bottom())) {
+      return bottom();
+    }
+
+    AnnotationMirror zeroClass = reflect(Zero.class);
+    AnnotationMirror nonZeroClass = reflect(NonZero.class);
+
+    switch(operator) {
+      case PLUS:
+      case MINUS:
+        if (equal(lhs, zeroClass)) {
+          return rhs;
+        } else if (equal(rhs, zeroClass)) {
+          return lhs;
+        }
+
+        break;
+
+      case TIMES:
+//        if (equal(lhs, bottom()) || equal(rhs, bottom())) {
+//          return bottom();
+//        }
+
+        if (equal(lhs, zeroClass) || equal(rhs, zeroClass)) {
+          return zeroClass;
+        }
+
+        if (equal(lhs, nonZeroClass) && equal(rhs, nonZeroClass)) {
+          return nonZeroClass;
+        }
+
+        break;
+
+      case DIVIDE:
+      case MOD:
+//        if (equal(lhs, bottom()) || equal(rhs, bottom())) {
+//          return bottom();
+//        }
+
+        if (equal(rhs, zeroClass)) {
+          return bottom();
+        }
+
+        if (equal(lhs, zeroClass)) {
+          return zeroClass;
+        }
+
+        break;
+    }
+
+    // All other cases return top
     return top();
   }
 

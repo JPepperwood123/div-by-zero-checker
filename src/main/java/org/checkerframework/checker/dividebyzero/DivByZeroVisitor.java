@@ -40,35 +40,22 @@ public class DivByZeroVisitor extends BaseTypeVisitor<DivByZeroAnnotatedTypeFact
       return false;
     }
 
-    ExpressionTree leftOperand = node.getLeftOperand();
-    ExpressionTree rightOperand = node.getRightOperand();
-  
     // Only DIVISION_OPERATORS have potential to throw a DB0 error
-    if (DIVISION_OPERATORS.contains(node.getKind())) {
-      // The denominator is literally evaluating to 0
-      if (isInt(rightOperand) && hasAnnotation(rightOperand, Zero.class)) {
-        return true;
-      }
+    if (!DIVISION_OPERATORS.contains(node.getKind())) {
+      return false;
     }
 
-    // Recursively check both sides for an error
-    if (leftOperand instanceof BinaryTree) {
-      BinaryTree leftBT = (BinaryTree)leftOperand;
+    ExpressionTree rightOperand = node.getRightOperand();
 
-      if (errorAt(leftBT)) {
-        return true;
-      }
+    // If denominator is not an integer type, return false
+    if (!isInt(rightOperand)) {
+      return false;
     }
 
-    if (rightOperand instanceof BinaryTree) {
-      BinaryTree rightBT = (BinaryTree)rightOperand;
+    // TODO : Recursively check both sides for an error????
 
-      if (errorAt(rightBT)) {
-        return true;
-      }
-    }
-
-    return false;
+    // If the annotation isn't of Non-Zero class, it is an error
+    return !hasAnnotation(rightOperand, NonZero.class);
   }
 
   /**
@@ -82,40 +69,24 @@ public class DivByZeroVisitor extends BaseTypeVisitor<DivByZeroAnnotatedTypeFact
     // A CompoundAssignmentTree represents any binary operator combined with an assignment,
     // such as "x += 10".
     // TODO
-    
+
     if (node == null) {
       return false;
     }
-    
-    ExpressionTree leftOperand = node.getRightOperand();
-    ExpressionTree rightOperand = node.getRightOperand();
 
     // Only DIVISION_OPERATORS have potential to throw a DB0 error
-    if (DIVISION_OPERATORS.contains(node.getKind())) {
-        // The denominator is of type @Zero
-        if (isInt(rightOperand) && hasAnnotation(rightOperand, Zero.class)) {
-          return true;
-        }
+    if (!DIVISION_OPERATORS.contains(node.getKind())) {
+      return false;
     }
 
-    // Recursively check both sides for an error
-    if (leftOperand instanceof BinaryTree) {
-      BinaryTree leftBT = (BinaryTree)leftOperand;
+    ExpressionTree expression = node.getExpression();
 
-      if (errorAt(leftBT)) {
-        return true;
-      }
+    // If expression is not an integer type, return false
+    if (!isInt(expression)) {
+      return false;
     }
 
-    if (rightOperand instanceof BinaryTree) {
-      BinaryTree rightBT = (BinaryTree)rightOperand;
-
-      if (errorAt(rightBT)) {
-        return true;
-      }
-    }
-
-    return false;
+    return !hasAnnotation(expression, NonZero.class);
   }
 
   // ========================================================================
